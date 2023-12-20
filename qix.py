@@ -1,4 +1,5 @@
 import pygame
+from random import randint
 from math import sqrt
 from enum import Enum
 from pygame.locals import QUIT
@@ -138,6 +139,48 @@ def color_blue(blue_colored,surface,obj_width):
 def enemy_side(enemy, new_path):
     for i in range(3):
         pass
+
+class enemy :
+    def __init__(self, width, heigth, speed, pos):
+        self.width = width
+        self.heigth = heigth
+        self.x = pos[0]
+        self.y = pos[1]
+        self.speed = speed
+    
+    def get_x(self):
+        return self.x
+    
+    def get_y(self):
+        return self.y
+    
+    def get_width(self):
+        return self.width
+    
+    def get_heigth(self):
+        return self.heigth
+    
+    def get_values(self):
+        return self.x, self.y, self.width, self.heigth
+    
+    def move(self, validate_path, max_x, max_y):
+        mutl_speed = randint(1,10)
+        gap_x = randint(-1,1)
+        gap_y = randint(-1,1)
+        move_x = self.x + gap_x * self.speed
+        move_y = self.y + gap_y * self.speed
+        i = 0
+        while gap_x == 0 or gap_y == 0 or (move_x,move_y) in validate_path or (move_x + self.width, move_y + self.width) in validate_path or (move_x + self.width, move_y) in validate_path or (move_x, move_y + self.width) in validate_path : # Pas besoin de vérifier l'appartenance à la grille car elle est entourée de validate path !!
+            print("Position impossible :",i)
+            gap_x = randint(-1,1)
+            gap_y = randint(-1,1)
+            move_x = self.x + gap_x * self.speed
+            move_y = self.y + gap_y * self.speed 
+            i += 1
+        self.width = 4 * randint(4,32)//4
+        self.x = move_x 
+        self.y = move_y 
+    
     
             
         
@@ -203,11 +246,14 @@ def main():
     obj_y = screen.get_size()[1] - 2*obj_width
     obj_speed = 4
     
+    """
     enemy_width = 15
     enemy_height = 15
     enemy_x = 120
     enemy_y = 240
     enemy_pos = [(enemy_x, enemy_y)]
+    """
+    qix = enemy(16, 16, 4, (120, 240))
 
     # Event loop
     wanna_play = True
@@ -271,46 +317,25 @@ def main():
                     coo = (obj_x, obj_y)
                     if coo in validate_cells :
                         validate_cells.update(new_path)
-                        #x,y, orientation = get_small_part_coo(screen,new_path)
-                        #get_surface_cells(new_path, screen, validate_cells)
-                        # TODO : Rechercher la ligne droite la plus proche de l'ennemi, et partir dans le sens contraire
+                        
                         list_lines = get_small_part_coo(screen,new_path)
                         validate_cells.update([elem for elem, orientation in list_lines])
                        
-                        best = most_close_coo((enemy_x,enemy_y),list_lines)
+                        best = most_close_coo((qix.get_x(),qix.get_y()),list_lines)
                         best_x, best_y = best[0][0],best[0][1]
                         if best[1] == Orientation.VERTICAL :
-                            if enemy_x > best_x : # Si enemy est à droite
+                            if qix.get_x() > best_x : # Si enemy est à droite
                                 side = (best_x - 1 * obj_width, best_y)
                             else :
                                 side = (best_x + 1 * obj_width, best_y)
                         else :
-                            if enemy_y > best_y : # Si enemy est plus bas
+                            if qix.get_y() > best_y : # Si enemy est plus bas
                                 side = (best_x, best_y - 1 * obj_width)
                             else :
                                 side = (best_x, best_y + 1 * obj_width)
                         tested_cells = add_to_surface(*side,new_path,validate_cells,obj_width,[])
                         blue_covered.update(tested_cells)
                         color_blue(blue_covered,blue,obj_width)
-                        """
-                        if orientation == Orientation.VERTICAL :
-                            side = (x, y - 1 * obj_width)
-                        else :
-                            side = (x - 1 * obj_width, y)
-                          
-                        is_enemy_this_side,tested_cells = recursive_played_cells(*side,new_path,validate_cells,obj_width,enemy_pos,[])
-                        
-                        if is_enemy_this_side :
-                            tested_cells = []
-                            if orientation == Orientation.VERTICAL :
-                                side = (x, y + 1 * obj_width)
-                            else :
-                                side = (x + 1 * obj_width, y)
-                            tested_cells = add_to_surface(*side,new_path,validate_cells,obj_width,tested_cells)
-                        
-                        blue_covered.update(tested_cells)
-                        color_blue(blue_covered,blue,obj_width)
-                        """
                         new_path = []
                         new_path_closed = True
                     else :
@@ -336,7 +361,8 @@ def main():
         screen = color_valide_cells(new_path,screen,obj_width,"red")
         
         pygame.draw.rect(screen, (255, 0, 0), (obj_x, obj_y, obj_width, obj_height))
-        pygame.draw.rect(screen, (150, 0, 0), (enemy_x, enemy_y, enemy_width, enemy_height))
+        qix.move(validate_cells,*screen.get_size())
+        pygame.draw.rect(screen, (150, 0, 0), qix.get_values())
         pygame.display.flip()
         clock.tick(60)
         
